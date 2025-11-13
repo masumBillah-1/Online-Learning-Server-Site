@@ -25,6 +25,11 @@ const getUserById = async (req, res, collection) => {
 const addUser = async (req, res, collection) => {
   try {
     const newUser = req.body;
+
+const result = await collection.insertOne(newUser);
+
+        res.json(result);
+
     const email = req.body.email
     const query = {email: email}
     const existingUser = await collection.findOne(query)

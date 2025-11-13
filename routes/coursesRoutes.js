@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const coursesController = require("../../Online-Learning-Platform-Server-site/controllers/coursesController");
+const coursesController = require("../controllers/coursesController");
 
 module.exports = (courseCollection) => {
   router.get("/", (req, res) => coursesController.getAllCourses(req, res, courseCollection));
