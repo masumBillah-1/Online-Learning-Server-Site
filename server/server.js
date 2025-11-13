@@ -1,50 +1,55 @@
 const express = require("express");
 const cors = require("cors");
 const { MongoClient, ServerApiVersion } = require("mongodb");
-const coursesRoutes = require("./routes/coursesRoutes");
+const coursesRoutes = require("../routes/coursesRoutes");
+const usersRoutes = require("../routes/usersRoutes"); // ✅ users route import করা হলো
 
 const app = express();
 const port = process.env.PORT || 4000;
 
-// Middleware
+// 🔧 Middleware
 app.use(cors());
 app.use(express.json());
 
-// MongoDB URI
-const uri = "mongodb+srv://onlinecourse:t6iz2UY6J5rJ8Qav@myserverdb.wwgfr6w.mongodb.net/?appName=MyServerDB";
+// 🔗 MongoDB URI
+const uri =
+  "mongodb+srv://onlinecourse:t6iz2UY6J5rJ8Qav@myserverdb.wwgfr6w.mongodb.net/?appName=MyServerDB";
+
 const client = new MongoClient(uri, {
   serverApi: {
     version: ServerApiVersion.v1,
     strict: true,
-    deprecationErrors: true
-  }
+    deprecationErrors: true,
+  },
 });
 
-// Connect MongoDB
+// ⚙️ MongoDB connect + routes setup
 async function run() {
   try {
     await client.connect();
-    console.log("Connected to MongoDB successfully!");
+    console.log("✅ Connected to MongoDB successfully!");
 
+    // Database & Collections
     const db = client.db("courses_db");
     const courseCollection = db.collection("courses");
+    const userCollection = db.collection("users"); // ✅ users collection
 
-    // Routes
+    // 🚀 Routes
     app.use("/courses", coursesRoutes(courseCollection));
+    app.use("/users", usersRoutes(userCollection)); // ✅ users route use করা হলো
 
-    // Test route
+    // 🔍 Test route
     app.get("/", (req, res) => {
-      res.send("Hello World! Server is running.");
+      res.send("Hello World! Server is running successfully 🚀");
     });
-
   } catch (err) {
-    console.error(err);
+    console.error("❌ Database connection error:", err);
   }
 }
 
 run().catch(console.dir);
 
-// Start server
+// ▶️ Server start
 app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
+  console.log(`🌐 Server running on port ${port}`);
 });
