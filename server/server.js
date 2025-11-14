@@ -3,10 +3,7 @@ const cors = require("cors");
 const { MongoClient, ServerApiVersion } = require("mongodb");
 const coursesRoutes = require("../routes/coursesRoutes");
 const usersRoutes = require("../routes/usersRoutes");
-const purchaseRoutes = require("../routes/purchaseRoutes"); 
-
-
-// 🆕 নতুন purchase route import
+const purchaseRoutes = require("../routes/purchaseRoutes");
 
 const app = express();
 const port = process.env.PORT || 4000;
@@ -15,8 +12,8 @@ const port = process.env.PORT || 4000;
 app.use(cors());
 app.use(express.json());
 
-// 🔗 MongoDB URI
-const uri =
+// 🔗 MongoDB URI (এটি environment variable থেকে নিন)
+const uri = process.env.MONGODB_URI || 
   "mongodb+srv://onlinecourse:t6iz2UY6J5rJ8Qav@myserverdb.wwgfr6w.mongodb.net/?appName=MyServerDB";
 
 const client = new MongoClient(uri, {
@@ -28,54 +25,58 @@ const client = new MongoClient(uri, {
 });
 
 // ⚙️ MongoDB connect + routes setup
-async function run() {
+let isConnected = false;
+
+async function connectDB() {
+  if (isConnected) {
+    return;
+  }
+  
   try {
     await client.connect();
+    isConnected = true;
     console.log("✅ Connected to MongoDB successfully!");
-
-    // Database & Collections
-    const db = client.db("courses_db");
-    const courseCollection = db.collection("courses");
-    const userCollection = db.collection("users");
-    const purchaseCollection = db.collection("purchases"); // 🆕 নতুন collection
-
-    // 🚀 Routes
-    app.use("/courses", coursesRoutes(courseCollection));
-    app.use("/users", usersRoutes(userCollection));
-    app.use("/purchases", purchaseRoutes(purchaseCollection)); // 🆕 purchase route
-
-    // 🆕 Latest courses route
-    app.get("/latest-courses", async (req, res) => {
-      try {
-        const latestCourses = await courseCollection
-          .find({})
-          .sort({ _id: -1 })
-          .limit(6)
-          .toArray();
-
-        res.send(latestCourses);
-      } catch (error) {
-        console.error("Error fetching latest courses:", error);
-        res.status(500).send({ message: "Failed to fetch latest courses" });
-      }
-    });
-
-    // 🔍 Test route
-    app.get("/", (req, res) => {
-      res.send("Hello World! Server is running successfully 🚀");
-    });
   } catch (err) {
     console.error("❌ Database connection error:", err);
+    throw err;
   }
 }
 
-run().catch(console.dir);
+// Database & Collections
+const db = client.db("courses_db");
+const courseCollection = db.collection("courses");
+const userCollection = db.collection("users");
+const purchaseCollection = db.collection("purchases");
 
-// // ▶️ Server start
-// app.listen(port, () => {
-//   console.log(`🌐 Server running on port ${port}`);
-// });
+// 🚀 Routes
+app.use("/courses", coursesRoutes(courseCollection));
+app.use("/users", usersRoutes(userCollection));
+app.use("/purchases", purchaseRoutes(purchaseCollection));
 
+// 🆕 Latest courses route
+app.get("/latest-courses", async (req, res) => {
+  try {
+    await connectDB();
+    const latestCourses = await courseCollection
+      .find({})
+      .sort({ _id: -1 })
+      .limit(6)
+      .toArray();
 
-// ✅ Export the app
+    res.send(latestCourses);
+  } catch (error) {
+    console.error("Error fetching latest courses:", error);
+    res.status(500).send({ message: "Failed to fetch latest courses" });
+  }
+});
+
+// 🔍 Test route
+app.get("/", (req, res) => {
+  res.send("Hello World! Server is running successfully 🚀");
+});
+
+// 🔥 Initialize DB connection
+connectDB();
+
+// 📤 Export the app for Vercel
 module.exports = app;
